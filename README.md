@@ -23,6 +23,7 @@
 
 ### cacheReader:
 - Simple File Reader, finds a match (using Regex) based on the host name provided by user. Returns the host or `null` in case it doesn't find a match.
+- In case we find a match we won't do the DNS query again and use the value in the cache file.
 
 ### sample output (single user - empty cache):
 - client-side:
@@ -58,5 +59,47 @@ Server to user 1: Root DNS: twitter.com:199.16.156.70
 Server to user 1: Local DNS: twitter.com:199.16.156.70
 Server to user 1: Root DNS: www.google.com:172.217.5.4
 Server to user 1: Local DNS: www.google.com:172.217.5.4
+>> User 1 disconnected.
+```
+
+### sample output (multiple user):
+- user#1:
+```
+Type in a domain name to query, or 'q' to quit:
+twitter.com
+Received: 'Root DNS: twitter.com:199.16.156.102'
+
+Type in a domain name to query, or 'q' to quit:
+twitter.com
+Received: 'Local DNS: twitter.com:199.16.156.102'
+
+Type in a domain name to query, or 'q' to quit:
+q
+
+Process finished with exit code 0
+```
+
+- user#2:
+```
+Type in a domain name to query, or 'q' to quit:
+facebook.com
+Received: 'Root DNS: facebook.com:69.171.230.68'
+
+Type in a domain name to query, or 'q' to quit:
+q
+
+Process finished with exit code 0
+```
+
+- server:
+```
+Server is listening...
+>> User 1 connected:
+>> User 2 connected:
+- Cache File is generated.
+Server to user 1: Root DNS: twitter.com:199.16.156.102
+Server to user 2: Root DNS: facebook.com:69.171.230.68
+Server to user 1: Local DNS: twitter.com:199.16.156.102
+>> User 2 disconnected.
 >> User 1 disconnected.
 ```
