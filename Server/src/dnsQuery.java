@@ -1,37 +1,141 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
- * Class dnsQuery handles new incoming queries.
+ * Class an handles new incoming queries.
  */
 
 class dnsQuery extends Thread {
-    Socket sSock = null;
-    dnsQuery(Socket sSock) {
-        this.sSock = sSock;
+    private Socket clientSocket = null;
+    private int userId;
+    private static final String CACHE_FILE_NAME = "DNS_MAPPING.txt";
+
+    dnsQuery(Socket sSock, int id) {
+        this.clientSocket = sSock;
+        this.userId = id;
     }
+
+    private String ipLookup(String address) {
+        InetAddress inetAddress =null;
+        String hostName;
+        String hostAddress;
+        String result;
+        try {
+            inetAddress = InetAddress.getByName(address);
+        } catch (Exception e) {
+            // System.err.println("Exception: " + e.getMessage());
+            return "Host not found";
+        }
+
+        if (inetAddress != null) {
+
+            hostName = inetAddress.getHostName();
+            hostAddress = inetAddress.getHostAddress();
+            result = hostName + ":" + hostAddress;
+
+            String cachedResult;
+            if ((cachedResult = cacheReader(hostName)) == null) {
+                // if hostName is not cached, cache it!
+                cacheGenerator(result);
+                return "Root DNS: " + result;
+            } else {
+                return "Local DNS: " + cachedResult;
+            }
+        }
+        else {
+            return "Host not found";
+        }
+    }
+
+    private void cacheGenerator(String inetAddressResult) {
+        try
+        {
+            FileWriter fw = new FileWriter(CACHE_FILE_NAME,true); //true: append new addresses to file
+            fw.write(inetAddressResult + "\n");
+            fw.close();
+        }
+        catch(IOException ioe)
+        {
+            System.err.println("IOException: " + ioe.getMessage());
+        }
+    }
+
+    private String cacheReader(String hostName) {
+
+        BufferedReader reader;
+        String line;
+        String hostPattern = "^(" + hostName + ")\\:";
+        Pattern p = Pattern.compile(hostPattern);
+        Matcher m;
+
+        try {
+            FileReader fileReader = new FileReader(CACHE_FILE_NAME);
+            reader = new BufferedReader(fileReader);
+
+            while((line = reader.readLine()) != null) {
+                m = p.matcher(line);
+                if (m.find()) {
+                    // we have the host name in our cache
+                    return line;
+                }
+            }
+        }
+        catch (FileNotFoundException e) {
+            // if cache file doesn't exist then create one in cacheGenerator
+            System.out.println("- Cache File is generated.");
+            return null;
+        }
+        catch (IOException e) {
+            System.err.println("IOException: " + e.getMessage());
+            return null;
+        }
+
+        return null;
+    }
+
     @Override
     public void run(){
-        try{
+        try {
             //Create an output stream and an input stream.
             //set input and output streams to correspond with the server socket.
             //Read in DNS Request
             //test for "hangup" signal and close the socket and in/out streams if it is found.
 
-            try{
-                //set local file cache to predetermined file.(e.g. DNS_mapping.txt)
-                //create file if it doesn't exist
-                //if it does exist, read the file line by line to look for a
-                //match with the query sent from the client
-                //If no lines match, use the machine DNS loockup to find the IP address
-                //send the result in the right format to the client
-            } catch (Exception e) {
-                //If no host was found, send out "Host Not Found" to the client
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(),
+                    true);
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader( clientSocket.getInputStream()));
+
+            String inputLine;
+            String userOutput = null;
+
+            while ((inputLine = in.readLine()) != null)
+            {
+                if (inputLine.equals("hangup")) {
+                    // closing the client socket - in/out stream
+                    clientSocket.close();
+                    in.close();
+                    out.close();
+                    System.out.printf(">> User %d disconnected.\n", userId);
+                    break;
+                }
+
+                userOutput = ipLookup(inputLine);
+                out.println(userOutput);
+
+                System.out.printf("Server to user %d: %s\n", userId, userOutput);
             }
         } catch(Exception e){
+            System.err.println("Exception: " + e.getMessage());
         }
     }
-    //print response to the terminal
-    //send the response back to the client
-    //Close the server socket.
-
 }

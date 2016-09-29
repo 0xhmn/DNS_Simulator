@@ -42,7 +42,7 @@ public class DNSClient{
                 System.exit(0);
             }
             else{
-                System.out.println(query);
+                // System.out.println(query);
                 sendOut.println(query);
                 //Read in the returned information
                 String data = readIn.readLine();
