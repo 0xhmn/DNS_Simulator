@@ -12,7 +12,7 @@ class dnsQuery extends Thread {
     @Override
     public void run(){
         try{
-            //Create an output stream and an iput stream.
+            //Create an output stream and an input stream.
             //set input and output streams to correspond with the server socket.
             //Read in DNS Request
             //test for "hangup" signal and close the socket and in/out streams if it is found.

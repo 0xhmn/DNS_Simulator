@@ -19,6 +19,7 @@ class monitorQuit extends Thread {
             }
             if(st.equalsIgnoreCase("exit")){
                 //Close Input stream and cleanly exit the Server Program.
+                System.out.println("Exiting the server");
                 System.exit(0);
             }
         }

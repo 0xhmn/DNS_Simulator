@@ -10,9 +10,10 @@ import java.util.*;
 class DNSServer {
 	public static void main(String[] args) throws Exception {
 		//Create a socket object called sSock, of type ServerSocket for TCP.
-
+		ServerSocket sSock = null;
 		try {
 			// Try to open server socket 5001.
+			sSock =  new ServerSocket(5001);
 		} catch (Exception e) {
 			System.out.println("Could not listen on port: 5001.");
 			System.exit(1); // Handle exceptions.
